@@ -21,32 +21,39 @@ df_countries = df.rename(columns={'index': 'ISO3'})
 # URL del archivo Parquet en GitHub
 url = "https://raw.githubusercontent.com/guillemmaya92/Analytics/master/Data/WID_Values.parquet"
 df = pd.read_parquet(url, engine="pyarrow")
+df = df[df['year'].isin([1980, 2023])]
 
 # Transform Data
 # ===================================================
-df['gdpinc'] = (df['gdptotal'] / df.groupby('country')['gdptotal'].shift(1) -1) * 100
+df['tincome'] = df['tincome2'] / df['xusd'] / 1000
+df['twealth'] = df['twealth2'] / df['xusd'] / 1000
 df['gdptotal'] = df['gdptotal'] / df['xusd']
+df['tincomeVAR'] = (df['tincome'] / df.groupby('country')['tincome'].shift(1) -1) * 100
+df['twealthVAR'] = (df['twealth'] / df.groupby('country')['twealth'].shift(1) -1) * 100
+df['wiratioVAR'] = (df['wiratio'] - df.groupby('country')['wiratio'].shift(1))
 df = df[df['year'] == 2023]
-df = df[df['wiratio'].notna() & df['gdpinc'].notna()]
+df = df[df['wiratio'].notna() & df['tincome'].notna()]
 df = pd.merge(df, df_countries, left_on='country', right_on='ISO2', how='inner')
-df = df[['country', 'Country_Abr', 'gdptotal', 'wiratio', 'gdpinc']]
-df = df[(df['gdpinc'] >= 0) & (df['gdpinc'] <= 10)]
+df = df[['year', 'country', 'Country_Abr', 'gdptotal', 'tincome', 'twealth', 'wiratio', 'tincomeVAR', 'twealthVAR', 'wiratioVAR']]
+df = df[(df['tincome'] >= 0) & (df['tincome'] <= 120000)]
 df = df.sort_values(by='gdptotal', ascending=True)
-
 df = df.rename(
         columns={
+            'year': 'year',
             'Country_Abr': 'country_name',
-            'gdptotal': 'total_income', 
-            'wiratio': 'betaCY', 
-            'gdpinc': 'incomeCY'}
+            'gdptotal': 'total_income',
+            'tincome': 'incomeCY',
+            'twealth': 'wealthCY', 
+            'wiratio': 'betaCY',
+            'tincomeVAR': 'incomeVAR',
+            'twealthVAR': 'wealthVAR',
+            'wiratioVAR': 'betaVAR'
+        }
     )
 print(df)
 
 # Data Visualization
 # ===================================================
-# Ordena el DataFrame por total_income de menor a mayor
-df = df.sort_values(by='total_income', ascending=True)
-
 # Crea la figura
 fig = go.Figure()
 
@@ -60,6 +67,7 @@ fig.add_trace(go.Scatter(
     y=df["incomeCY"],
     mode='markers',
     text=df["country_name"],
+    customdata=np.vstack((df["incomeCY"], df["wealthCY"], df["incomeVAR"], df["wealthVAR"], df["betaCY"], df["betaVAR"])).T,
     marker=dict(
         size=marker_size,
         color="rgba(0,0,0,0)",
@@ -69,9 +77,9 @@ fig.add_trace(go.Scatter(
         )
     ),
     hovertemplate="<b>Country:</b> %{text}<br>" +
-                  "<b>Income Avg (€):</b> %{y:.0f}k | <b>Var. 1995:</b> %{customdata[2]:.2f}%<br>" + 
-                  "<b>Wealth Avg (€):</b> %{customdata[1]:.0f}k | <b>Var. 1995:</b> %{customdata[3]:.2f}%<br>" +
-                  "<b>Ratio:</b> %{customdata[4]:.2f} | <b>Var. 1995:</b> %{customdata[5]:.2f}pp<extra></extra>",
+                  "<b>Income Avg ($):</b> %{y:.0f}k | <b>Var. 1980:</b> %{customdata[2]:.2f}%<br>" + 
+                  "<b>Wealth Avg ($):</b> %{customdata[1]:.0f}k | <b>Var. 1980:</b> %{customdata[3]:.2f}%<br>" +
+                  "<b>Ratio:</b> %{customdata[4]:.2f} | <b>Var. 1980:</b> %{customdata[5]:.2f}pp<extra></extra>",
     showlegend=False
 ))
 
@@ -80,12 +88,12 @@ for i, row in df.iterrows():
     country_iso = row["country"]
     
     # Calcular tamaño de la imagen
-    image_size = marker_size[i] * 0.021
+    image_size = marker_size[i] * 0.205
 
     # Añadir la imagen de la bandera, asegurándose de que el orden es correcto
     fig.add_layout_image(
         dict(
-            source=f"https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/{country_iso}.png",
+            source=f"https://raw.githubusercontent.com/guillemmaya92/world_flags_round/refs/heads/master/flags/{country_iso}.png",
             xref="x",
             yref="y",
             xanchor="center",
@@ -95,8 +103,7 @@ for i, row in df.iterrows():
             sizex=image_size,
             sizey=image_size,
             sizing="contain",
-            opacity=0.8,
-            layer="above"
+            opacity=0.8
         )
     )
 
@@ -124,16 +131,17 @@ fig.add_shape(
 
 # Configuration plot
 fig.update_layout(
-    title="<b>Capital is Back</b>",
+    title="<b>Wealth-Income Ratio</b>",
     title_x=0.11,
+    title_y=0.93,
     title_font=dict(size=16),
     annotations=[
         dict(
-            text="Income and Wealth Ratio by Country",
+            text="Global Patterns in Wealth-Income Ratios and Average Income per Capita",
             xref="paper",
             yref="paper",
             x=0,
-            y=1.07,
+            y=1.06,
             showarrow=False,
             font=dict(size=11)
         ),
@@ -148,7 +156,7 @@ fig.update_layout(
             align="left"
         ),
         dict(
-            text="<b>Currency:</b> Official exchange rate 2023 of the local currency to EUR.",
+            text=f"<b>Currency:</b> Official exchange rate {df["year"].max()} of the local currency to USD.",
             xref="paper",
             yref="paper",
             x=0,
@@ -158,18 +166,28 @@ fig.update_layout(
             align="left"
         ),
         dict(
-            text=f"2022",
+            text=f"<i>@guillemmaya</i>",
+            xref="paper",
+            yref="paper",
+            x=1,
+            y=-0.14,
+            showarrow=False,
+            font=dict(size=11),
+            align="right"
+        ),
+        dict(
+            text=str(df["year"].max()),
             xref="paper", 
             yref="paper",
             x=1, 
-            y=1.1,
+            y=1.08,
             showarrow=False,
             font=dict(size=22, color='lightgray', weight='bold'),
             align="right"
         )
     ],
     xaxis=dict(
-        title="<b>Income-Wealth Ratio</b>",
+        title="<b>Wealth-Income Ratio</b>",
         range=[0, 12],
         tickvals=[i *  4 / 2 for i in range(7)],
         ticktext=[f"{int(i * 4 / 2)}" for i in range(7)],
@@ -179,10 +197,10 @@ fig.update_layout(
         gridcolor="#ebebeb"
     ),
     yaxis=dict(
-        title="<b>Income Average (€)</b>",
-        range=[0, 12],
-        tickvals=[i * 12 / 6 for i in range(7)],
-        ticktext=[f"{int(i * 12 / 6)}k" for i in range(7)],
+        title="<b>Average Income per Capita ($US)</b>",
+        range=[0, 120],
+        tickvals=[i * 120 / 6 for i in range(7)],
+        ticktext=[f"{int(i * 120 / 6)}k" for i in range(7)],
         showline=True,
         linewidth=1,
         linecolor="black",
