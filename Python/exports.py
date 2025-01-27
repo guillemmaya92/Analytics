@@ -83,52 +83,171 @@ dfp = dfp.groupby('year')[['rgdpe', 'comerce']].sum().reset_index()
 dfp['comerce_per'] = dfp['comerce'] / dfp['rgdpe']
 dfp = dfp.rename(columns={'rgdpe': 'gdp'})
 
-# third dfm
+# Third dfm
 dfw['comerce'] = dfw['imports'] + dfw['exports']
 dfw = dfw[['year', 'gdp', 'comerce']].groupby('year', as_index=False).sum()
 dfw['comerce_per'] = dfw['comerce'] / dfw['gdp']
 
-# concat dataframes
+# Concat dataframes
 df = pd.concat([dfm, dfp, dfw], ignore_index=True)
-
 df['comerce_per'] = df['comerce_per'].rolling(window=2, center=True).mean()
+
+# Divide dataframes
+df_1870_1914 = df[(df['year'] >= 1870) & (df['year'] <= 1915)]
+df_1915_1945 = df[(df['year'] >= 1915) & (df['year'] <= 1945)]
+df_1945_1980 = df[(df['year'] >= 1945) & (df['year'] <= 1980)]
+df_1980_2008 = df[(df['year'] >= 1980) & (df['year'] <= 2008)]
+df_2008_2023 = df[(df['year'] >= 2008) & (df['year'] <= 2023)]
 
 print(df)
 
 # Visualization Data
 # ============================================
-# Definir colores y otros parámetros
+# Font and style
+plt.rcParams.update({'font.family': 'sans-serif', 'font.sans-serif': ['Open Sans'], 'font.size': 10})
 sns.set(style="white", palette="muted")
 
-# Dividir los datos en varios rangos
-df_1870_1914 = df[(df['year'] >= 1870) & (df['year'] <= 1915)]
-df_1915_1945 = df[(df['year'] >= 1915) & (df['year'] <= 1945)]
-df_1945_2008 = df[(df['year'] >= 1945) & (df['year'] <= 2008)]
-df_2008_2023 = df[(df['year'] >= 2008) & (df['year'] <= 2023)]
+# Create a figure
+ax = plt.figure(figsize=(10, 6))
 
-# Crear el gráfico con stackplot
-plt.figure(figsize=(10, 6))
+# Stackplot for each dataframe
+plt.stackplot(df_1870_1914['year'], df_1870_1914['comerce_per'], color='#084d95', alpha=1)
+plt.stackplot(df_1915_1945['year'], df_1915_1945['comerce_per'], color='#d92724', alpha=1)
+plt.stackplot(df_1945_1980['year'], df_1945_1980['comerce_per'], color='#084d95', alpha=1)
+plt.stackplot(df_1980_2008['year'], df_1980_2008['comerce_per'], color='#084d95', alpha=1)
+plt.stackplot(df_2008_2023['year'], df_2008_2023['comerce_per'], color='#d92724', alpha=1)
 
-# Stackplot para los años 1870-1914 (azul)
-plt.stackplot(df_1870_1914['year'], df_1870_1914['comerce_per'], color='#084d95', alpha=0.9)
-plt.stackplot(df_1915_1945['year'], df_1915_1945['comerce_per'], color='#d92724', alpha=0.9)
-plt.stackplot(df_1945_2008['year'], df_1945_2008['comerce_per'], color='#084d95', alpha=0.9)
-plt.stackplot(df_2008_2023['year'], df_2008_2023['comerce_per'], color='#d92724', alpha=0.9)
+# Add vertical lines
+plt.axvline(x=1915, color='white', linestyle='--', linewidth=0.75)
+plt.axvline(x=1945, color='white', linestyle='--', linewidth=0.75)
+plt.axvline(x=1980, color='white', linestyle='--', linewidth=0.75)
+plt.axvline(x=2008, color='white', linestyle='--', linewidth=0.75)
 
-# Añadir líneas verticales en los años 1915, 1945 y 2008
-plt.axvline(x=1915, color='white', linestyle='--', linewidth=1)
-plt.axvline(x=1945, color='white', linestyle='--', linewidth=1)
-plt.axvline(x=2008, color='white', linestyle='--', linewidth=1)
-
+# Add title and labels
+plt.text(0, 1.08, f'Eras of globalization', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+plt.text(0, 1.045, 'Trade openess slowed following the global financial crisis.', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
+plt.text(0, 1.01, '(sum of exports and imports as percent of GDP)', fontsize=9, fontweight='light', color='#262626', ha='left', transform=plt.gca().transAxes)
 plt.xlim(1871, 2023)
+plt.ylim(0, 65)
+plt.xticks([1870, 1915, 1945, 1980, 2008])
+plt.gca().yaxis.grid(True, linestyle='-', alpha=0.4)
 
-# Agregar etiquetas y título
-plt.title("Gráfico de Área Apilada - Comercio per GDP")
-plt.xlabel("Año")
-plt.ylabel("Comercio per GDP")
+# Delete spines
+for spine in ["top", "left", "right"]:
+    plt.gca().spines[spine].set_visible(False)
 
-# Agregar leyenda
-plt.legend(loc='upper left')
+# Industrialization
+plt.text(
+    x=df_1870_1914['year'].mean(),
+    y=3,
+    s="1870-1914",
+    fontsize=9, 
+    color='white',
+    ha='center',
+    va='bottom'
+)
+plt.text(
+    x=df_1870_1914['year'].mean(),
+    y=1,
+    s="Industrialization",
+    fontsize=9, 
+    fontweight='bold',
+    color='white',
+    ha='center',
+    va='bottom'
+)
 
-# Mostrar el gráfico
+# Wars and proteccionism
+plt.text(
+    x=df_1915_1945['year'].mean(),
+    y=3,
+    s="1915-1945",
+    fontsize=9, 
+    color='white',
+    ha='center',
+    va='bottom'
+)
+plt.text(
+    x=df_1915_1945['year'].mean(),
+    y=1,
+    s="Wars, proteccionism",
+    fontsize=9, 
+    fontweight='bold',
+    color='white',
+    ha='center',
+    va='bottom'
+)
+
+# Fixed exchanges rates
+plt.text(
+    x=df_1945_1980['year'].mean(),
+    y=3,
+    s="1945-1980",
+    fontsize=9, 
+    color='white',
+    ha='center',
+    va='bottom'
+)
+plt.text(
+    x=df_1945_1980['year'].mean(),
+    y=1,
+    s="Fixed exchanges rates",
+    fontsize=9, 
+    fontweight='bold',
+    color='white',
+    ha='center',
+    va='bottom'
+)
+
+# Liberization
+plt.text(
+    x=df_1980_2008['year'].mean(),
+    y=3,
+    s="1980-2008",
+    fontsize=9, 
+    color='white',
+    ha='center',
+    va='bottom'
+)
+plt.text(
+    x=df_1980_2008['year'].mean(),
+    y=1,
+    s="Liberization",
+    fontsize=9, 
+    fontweight='bold',
+    color='white',
+    ha='center',
+    va='bottom'
+)
+
+# Slowbalization
+plt.text(
+    x=df_2008_2023['year'].mean() +2,
+    y=3,
+    s="2008-current",
+    fontsize=9, 
+    color='white',
+    ha='center',
+    va='bottom',
+    rotation=90
+)
+plt.text(
+    x=df_2008_2023['year'].mean() +5,
+    y=1,
+    s="Slowbalization",
+    fontsize=9, 
+    fontweight='bold',
+    color='white',
+    ha='center',
+    va='bottom',
+    rotation=90
+)
+
+# Add Data Source
+plt.text(0, -0.12, 'Data Source: PIIE, Jorda-Schularick-Taylor Macrohistory Database, Penn World Data (10.0), World Bank, and IMF staff calculations.', 
+    transform=plt.gca().transAxes, 
+    fontsize=8, 
+    color='gray')
+
+# Show plot!
 plt.show()
