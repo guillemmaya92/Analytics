@@ -90,6 +90,7 @@ dfw['comerce_per'] = dfw['comerce'] / dfw['gdp']
 
 # Concat dataframes
 df = pd.concat([dfm, dfp, dfw], ignore_index=True)
+df['comerce_per'] = df['comerce_per'] * 100
 df['comerce_per'] = df['comerce_per'].rolling(window=2, center=True).mean()
 
 # Divide dataframes

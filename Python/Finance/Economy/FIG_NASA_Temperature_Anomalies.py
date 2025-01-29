@@ -82,7 +82,7 @@ plt.text(1, 1.12, f'{formatted_date}',
     fontweight='bold', color='#D3D3D3')
 
 # Save it..
-plt.savefig('C:/Users/guillem.maya/Downloads/FIG_NASA_Temperature_Anomalies.png', format='png', bbox_inches='tight')
+plt.savefig('C:/Users/guill/Downloads/FIG_NASA_Temperature_Anomalies.png', format='png', bbox_inches='tight')
 
 # Show the plot!
 plt.show()

@@ -3,7 +3,6 @@
 import pandas as pd
 import numpy as np
 import requests
-from io import BytesIO
 import wbgapi as wb
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -230,6 +229,9 @@ plt.text(0, -0.12, 'Data Source: PIIE, Jorda-Schularick-Taylor Macrohistory Data
     transform=plt.gca().transAxes, 
     fontsize=8, 
     color='gray')
+
+# Save the figure
+plt.savefig('C:/Users/guill/Desktop/FIG_OWD_Globalization_Eras.png', format='png', dpi=300, bbox_inches='tight')
 
 # Show plot!
 plt.show()
