@@ -14,7 +14,7 @@ response = requests.get(url)
 data = response.json()
 df = pd.DataFrame(data)
 df = pd.DataFrame.from_dict(data, orient='index').reset_index()
-df_countries = df.rename(columns={'index': 'ISO3', 'Country': 'name'})
+df_countries = df.rename(columns={'index': 'ISO3', 'Country_Abr': 'name'})
 
 # Data Extraction - WID (Percentiles)
 # ==========================================
@@ -150,7 +150,7 @@ for spine in plt.gca().spines.values():
 plt.tight_layout()
 
 # Save figure...
-plt.savefig(r'C:\Users\guillem.maya\Downloads\FIG_WID_Countries_income.png', format='png', dpi=300)
+plt.savefig(r'C:\Users\guill\Downloads\FIG_WID_Countries_income.png', format='png', dpi=300)
 
 # Plot it! :)
 plt.show()
