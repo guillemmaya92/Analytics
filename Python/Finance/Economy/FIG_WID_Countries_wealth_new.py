@@ -78,8 +78,8 @@ palette = ["#537c78", "#f15b4c", "#faa41b", "#ffd45b"]
 ax = dfplot.plot(kind="barh", stacked=True, figsize=(10, 6), width=0.7, color=palette)
 
 # Add title and labels
-ax.text(0, 1.12, f'Where is income distribution concentrated?', fontsize=16, fontweight='bold', ha='left', transform=ax.transAxes)
-ax.text(0, 1.07 , f'Income Percentile Breakdown by Country', fontsize=11, color='#262626', ha='left', transform=ax.transAxes)
+ax.text(0, 1.12, f'Where is wealth distribution concentrated?', fontsize=16, fontweight='bold', ha='left', transform=ax.transAxes)
+ax.text(0, 1.07 , f'Wealth Percentile Breakdown by Country', fontsize=11, color='#262626', ha='left', transform=ax.transAxes)
 ax.set_xlim(-100, 100)
 xticks = np.linspace(-75, 75, 7)
 plt.xticks(xticks, labels=[f"{abs(int(i))}%" for i in xticks], fontsize=8)
@@ -162,7 +162,7 @@ plt.text(0, -0.135, space + 'World Inequality Database (WID)',
 for spine in plt.gca().spines.values():
     spine.set_visible(False)
 
- # Adjust layout
+# Adjust layout
 plt.tight_layout()
 
 # Save figure...
