@@ -170,7 +170,7 @@ for spine in plt.gca().spines.values():
     spine.set_visible(False)
     
 # Save figure...
-plt.savefig(r'C:\Users\guillem.maya\Downloads\FIG_Airbnb_Cities.png', format='png', dpi=300)
+plt.savefig(r'C:\Users\guill\Downloads\FIG_Airbnb_Cities.png', format='png', dpi=300)
 
 # Plot it! :)
 plt.show()
