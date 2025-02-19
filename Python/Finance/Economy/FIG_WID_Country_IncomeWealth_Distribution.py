@@ -51,7 +51,7 @@ df['symbol'] = ('€' if currency == 'eur' else ('$' if currency == 'usd' else d
 df = df[['country', 'name', 'currency', 'symbol', 'year', 'percentile', 'value']]
 
 # If country == WO
-df['name'] = df.apply(lambda row: 'world' if row['country'] == 'WO' else row['name'], axis=1)
+df['name'] = df.apply(lambda row: 'World' if row['country'] == 'WO' else row['name'], axis=1)
 df['symbol'] = df.apply(lambda row: '$' if row['country'] == 'WO' and currency == 'usd' 
                         else '€' if row['country'] == 'WO' and currency != 'usd' 
                         else row['symbol'], axis=1)
