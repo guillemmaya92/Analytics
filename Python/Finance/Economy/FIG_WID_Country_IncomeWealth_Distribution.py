@@ -7,12 +7,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import matplotlib.patches as patches
+import os
 
 # Variables
 # ==========================================
-value = 'income' #income or wealth
+value = 'wealth' #income or wealth
 year = 2023 # year
-country = 'ES' #iso2
+country = 'ES' #iso2 or WO (world)
 currency = 'eur' #local, usd, eur
 
 # Data Extraction - GITHUB (Countries)
@@ -107,6 +108,11 @@ symbol = df.loc[df['percentile'] == 99, 'symbol'].iloc[0]
 country = df.loc[df['percentile'] == 99, 'name'].iloc[0]
 year = df.loc[df['percentile'] == 99, 'year'].iloc[0]
 
+if value == "wealth":
+    note = "Net national wealth is the total value of assets (cash, housing, bonds, equities, etc.) owned by the national economy, minus its debts."
+else:
+    note = "National income measures the total income available to a country's residents. It equals GDP minus capital depreciation plus net foreign income."
+
 # First Plot
 # ==================
 # Plot Bars
@@ -114,7 +120,7 @@ bars = ax1.bar(df['percentile'], df['value'], color=df['color'], edgecolor='dark
 
 # Title and labels
 ax1.text(0, 1.1, f'{capital_value} Distribution in {country}', fontsize=13, fontweight='bold', ha='left', transform=ax1.transAxes)
-ax1.text(0, 1.06, 'Intrapercentile Analysis of Economic Inequalities and Wealth Concentration', fontsize=9, color='#262626', ha='left', transform=ax1.transAxes)
+ax1.text(0, 1.06, f'Intrapercentile Analysis of Economic Inequalities and {capital_value} Concentration', fontsize=9, color='#262626', ha='left', transform=ax1.transAxes)
 ax1.set_xlabel('% Population', fontsize=10, weight='bold')
 ax1.set_ylabel(f'{capital_value} ({symbol})', fontsize=10, weight='bold')
 
@@ -142,16 +148,16 @@ def format_func(value, tick_number=None):
     else:
         return str(round(value))
     
-# Function to format Y axis
+# Function to format label bars
 def format_func2(value, tick_number=None):
     if abs(value) >= 1e6:
-        return '{:,.1f}M'.format(round(value / 1e5) / 10) 
+        return '{:,.1f} M'.format(round(value / 1e5) / 10) 
     elif abs(value) >= 1e5:
-        return '{:,.0f}K'.format(round(value / 1e3, -1))
+        return '{:,.0f} K'.format(round(value / 1e3, -1))
     elif abs(value) >= 1e4:
-        return '{:,.0f}K'.format(round(value / 1e3))
+        return '{:,.0f} K'.format(round(value / 1e3))
     elif abs(value) >= 1e3:
-        return '{:,.0f}K'.format(round(value / 1e3))
+        return '{:,.0f} K'.format(round(value / 1e3))
     else:
         return str(round(value))
 
@@ -201,7 +207,7 @@ ax2.set_xlim(0, 101)
 # Add label values
 for i, row in df2.iterrows():
     plt.text(row['percentile2'] - row['count'] + row['count'] / 2, 0, 
-             f'{row["valueper"] * 100:.2f}%', ha='center', va='center', color='white', fontweight='bold')
+             f'{row["valueper"] * 100:.1f}%', ha='center', va='center', color='white', fontweight='bold')
     
  # Add Year label
 ax1.text(1, 1.08, f'{year}',
@@ -210,7 +216,25 @@ ax1.text(1, 1.08, f'{year}',
     fontweight='bold', color='#D3D3D3')
 
 # Add Data Source
-ax2.text(0, -0.5, 'Data Source: World Inequality Database (WID)', 
+ax2.text(0, -0.5, 'Data Source:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 26
+ax2.text(0, -0.5, space + 'World Inequality Database (WID)', 
+    transform=ax2.transAxes, 
+    fontsize=8, 
+    color='gray')
+
+# Add Data Source
+ax2.text(0, -0.99, f'{capital_value}:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 16
+ax2.text(0, -0.99, space + f'{note}', 
     transform=ax2.transAxes, 
     fontsize=8, 
     color='gray')
@@ -219,7 +243,8 @@ ax2.text(0, -0.5, 'Data Source: World Inequality Database (WID)',
 plt.tight_layout()
 
 # Save it...
-plt.savefig(f"C:/Users/guill/Downloads/FIG_WID_{country}_{capital_value}_Distribution.png", dpi=300, bbox_inches='tight') 
+filename = f"FIG_WID_{country}_{capital_value}_Distribution.png"
+plt.savefig(filename, dpi=300, bbox_inches='tight')
 
 # Plot it!
 plt.show()
