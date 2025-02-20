@@ -3,11 +3,9 @@
 import pandas as pd
 import numpy as np
 import requests
-import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import matplotlib.patches as patches
-import os
 
 # Variables
 # ==========================================
@@ -119,8 +117,9 @@ else:
 bars = ax1.bar(df['percentile'], df['value'], color=df['color'], edgecolor='darkgrey', linewidth=0.5, zorder=2)
 
 # Title and labels
-ax1.text(0, 1.1, f'{capital_value} Distribution in {country}', fontsize=13, fontweight='bold', ha='left', transform=ax1.transAxes)
-ax1.text(0, 1.06, f'Intrapercentile Analysis of Economic Inequalities and {capital_value} Concentration', fontsize=9, color='#262626', ha='left', transform=ax1.transAxes)
+fig.add_artist(plt.Line2D([0.07, 0.07], [0.93, 1], linewidth=6, color='#203764'))
+ax1.text(0.02, 1.1, f'{capital_value} Distribution in {country}', fontsize=16, fontweight='bold', ha='left', transform=ax1.transAxes)
+ax1.text(0.02, 1.06, f'Intrapercentile Analysis of Economic Inequalities and {capital_value} Concentration', fontsize=11, color='#262626', ha='left', transform=ax1.transAxes)
 ax1.set_xlabel('% Population', fontsize=10, weight='bold')
 ax1.set_ylabel(f'{capital_value} ({symbol})', fontsize=10, weight='bold')
 
@@ -210,7 +209,7 @@ for i, row in df2.iterrows():
              f'{row["valueper"] * 100:.1f}%', ha='center', va='center', color='white', fontweight='bold')
     
  # Add Year label
-ax1.text(1, 1.08, f'{year}',
+ax1.text(1, 1.1, f'{year}',
     transform=ax1.transAxes,
     fontsize=22, ha='right', va='top',
     fontweight='bold', color='#D3D3D3')
@@ -227,7 +226,7 @@ ax2.text(0, -0.5, space + 'World Inequality Database (WID)',
     fontsize=8, 
     color='gray')
 
-# Add Data Source
+# Add Notes
 ax2.text(0, -0.99, f'{capital_value}:', 
     transform=plt.gca().transAxes, 
     fontsize=8,
