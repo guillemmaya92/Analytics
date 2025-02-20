@@ -6,6 +6,7 @@ import requests
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import matplotlib.patches as patches
+import os
 
 # Variables
 # ==========================================
@@ -242,7 +243,8 @@ ax2.text(0, -0.99, space + f'{note}',
 plt.tight_layout()
 
 # Save it...
-filename = f"FIG_WID_{country}_{capital_value}_Distribution.png"
+download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+filename = os.path.join(download_folder, f"FIG_WID_{country}_{capital_value}_Distribution.png")
 plt.savefig(filename, dpi=300, bbox_inches='tight')
 
 # Plot it!
