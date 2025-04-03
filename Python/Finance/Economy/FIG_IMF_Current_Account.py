@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.ticker as mticker
+import os
 
 # Data Extraction (Countries)
 # =====================================================================
@@ -99,9 +100,11 @@ sns.set(style="white", palette="muted")
 palette = ["#003366", "#068a41", "#FF0000", "#cfcfcf", "#cfcfcf"]
 
 # Crear figure and plot
-ax = df.plot(kind="bar", stacked=True, figsize=(10, 6), width=0.7, color=palette, legend=False)
+fig, ax = plt.subplots(figsize=(10, 6))
+ax = df.plot(kind="bar", stacked=True, ax=ax, width=0.7, color=palette, legend=False)
 
 # Add title and labels
+fig.add_artist(plt.Line2D([0.11, 0.11], [0.925, 1], linewidth=6, color='#203764', solid_capstyle='butt'))
 plt.text(0, 1.12, f'Who Absorbs the World’s Savings?', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 plt.text(0, 1.07, f'Global imbalance in the current account', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
 
@@ -153,14 +156,16 @@ plt.text(45, -500, f"← {usa_percent:.0%}", fontsize=7, ha='left', va='bottom')
 plt.text(45, 250, f"← {eur_percent:.0%}", fontsize=7, ha='left', va='bottom')
 plt.text(45, 675, f"← {chn_percent:.0%}", fontsize=7, ha='left', va='bottom')
 
-plt.text(45, 1900, f"World\ndeficit", fontsize=7, fontweight = 'bold', ha='left', va='top')
-plt.text(45, -1500, f"World\nsuperavit", fontsize=7, fontweight = 'bold', ha='left', va='bottom')
+plt.text(45, 1900, f"World\nsuperavit", fontsize=7, fontweight = 'bold', ha='left', va='top')
+plt.text(45, -1500, f"World\ndeficit", fontsize=7, fontweight = 'bold', ha='left', va='bottom')
 
 # Remove spines
 for spine in plt.gca().spines.values():
     spine.set_visible(False)
 
-# Save figure...
-plt.savefig(r'C:\Users\guillem.maya\Downloads\FIG_IMF_Current_Account.png', format='png', dpi=300)
+# Save it...
+download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+filename = os.path.join(download_folder, f"FIG_IMF_Current_Account.png")
+plt.savefig(filename, dpi=300, bbox_inches='tight')
 
 plt.show()
