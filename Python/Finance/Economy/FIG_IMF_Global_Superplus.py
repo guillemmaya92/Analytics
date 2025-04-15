@@ -115,7 +115,7 @@ ax = df.plot(kind="bar", stacked=True, width=0.9, color=palette, legend=False, a
 
 # Title
 fig.add_artist(plt.Line2D([0.11, 0.11], [0.91, 1], linewidth=6, color='#203764', solid_capstyle='butt')) 
-plt.text(0, 1.12, f'Who Absorbs the World’s Superplus?', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+plt.text(0, 1.12, f'Who Absorbs the World’s Surplus?', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 plt.text(0, 1.08, f'Global imbalance in the current account', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
 plt.text(0, 1.045, f'(as percent of global GDP)', fontsize=8, color='#262626', ha='left', transform=plt.gca().transAxes)
 
@@ -176,7 +176,7 @@ plt.text(50, 2, f"World\nsurplus", fontsize=7, fontweight = 'bold', ha='left', v
 plt.text(50, -1.8, f"World\ndeficit", fontsize=7, fontweight = 'bold', ha='left', va='bottom')
 
 # Forecast
-plt.text(47, 3.1, f'Forecast', fontsize=8, fontweight='bold', color='gray', ha='center')
+plt.text(47, 3.1, f'Forecast', fontsize=7, fontweight='bold', color='gray', ha='center')
 ax.axvspan(44.5, 49.5, color='gray', alpha=0.15, edgecolor='none')
 
 # Remove spines
@@ -185,10 +185,8 @@ for spine in plt.gca().spines.values():
 
 # Save it...
 download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-filename = os.path.join(download_folder, f"FIG_IMF_Global_Superplus.png")
+filename = os.path.join(download_folder, f"FIG_IMF_Global_Surplus.png")
 plt.savefig(filename, dpi=300, bbox_inches='tight')
 
 # Show :)
-plt.show()
-
 plt.show()
