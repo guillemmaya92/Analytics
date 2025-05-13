@@ -5,24 +5,27 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.patches as patches
 import os
 
-# Data (China) 
+# Data (USA) 
 # =====================================================================
 # Read wikipedia data
-url = "https://en.wikipedia.org/wiki/List_of_Chinese_provincial-level_divisions_by_GDP_per_capita"
+url = "https://en.wikipedia.org/wiki/List_of_U.S._states_and_territories_by_GDP"
 tables = pd.read_html(url)
-df = tables[2]
-df.columns = ['region', 'gdpc_cny', 'gdpc_usd', 'share', 'gdp_cny', 'population', 'delete']
-df = df.iloc[0:].reset_index(drop=True)
 
-# Data Manipulation
+# population
+df = tables[0]
+df.columns = ['region', '2', 'gdp', '4', '5', '6', '7', 'gdpc', '9', '10']
+df = df.iloc[0:].reset_index(drop=True)
+df = df.iloc[:-1]
+df['gdpc'] = df['gdpc'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+df['population'] = df['gdp'] / df['gdpc']
+
+# Data (Manipulation) 
 # =====================================================================
 # Select columns and solve names
-df =  df[['region', 'gdpc_usd', 'population']]
-df['gdpc'] = df['gdpc_usd']
-df['population'] = df['population'] / 1000
-df['region'] = df['region'].str.replace(r'\[\d+\]', '', regex=True)
+df =  df[['region', 'gdpc', 'population']]
 
 # Order dataframe
 df = df.sort_values(by=['gdpc'])
@@ -54,7 +57,7 @@ sns.set(style="whitegrid")
 fig, ax = plt.subplots(figsize=(12, 8))
 
 # Create a palette
-norm = plt.Normalize(df["gdpc"].min(), df["gdpc"].max())
+norm = plt.Normalize(df["gdpc"].min(), 120000)
 colors = plt.cm.coolwarm_r(norm(df["gdpc"]))
 
 # Create a Matplotlib plot
@@ -63,38 +66,57 @@ bars = plt.bar(df['left'], df['gdpc'], width=df['population'],
 
 # Title
 fig.add_artist(plt.Line2D([0.08, 0.08], [0.90, 0.99], linewidth=6, color='#203764', solid_capstyle='butt'))
-ax.text(0.02, 1.09, f'Regional GDP Distribution of China', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+ax.text(0.02, 1.09, f'Regional GDP Distribution of USA', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 ax.text(0.02, 1.06, f'From rural to urban, the role of location in income inequality', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
 ax.text(0.02, 1.03, f'(GDP per capita in $US)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
 
 # Configuration grid and labels
 ax.set_xlim(0, df['population_cum'].max()) 
-ax.set_ylim(0, df['gdpc'].max() * 1.093)
+ax.set_ylim(0, 160000)
 ax.set_xlabel('Cumulative Population (M)', fontsize=10, fontweight='bold')
 ax.set_ylabel('GDP per capita ($USD)', fontsize=10, fontweight='bold')
 ax.grid(axis='x')
 ax.grid(axis='y', linestyle='--', linewidth=0.5, color='lightgray')
 ax.tick_params(axis='x', labelsize=9)
-ax.tick_params(axis='y', labelsize=9) 
+ax.tick_params(axis='y', labelsize=9)
+xticks_values = [0 + (df['population_cum'].max() - 0) * i / 5 for i in range(6)]
+xticks_rounded = [int(np.round(value, -1)) for value in xticks_values]
+ax.set_xticks(xticks_rounded)
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x):,}'))
 ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x):,}'))
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.axhline(y=13445, color='red', linestyle='--', linewidth=0.5, zorder=0, alpha=0.4)
-ax.text(75, 13445 + 100, "Median: 13.445$", color='darkred', fontweight='bold', fontsize=9, ha='center', va='bottom', zorder=2)
+ax.axhline(y=85810, color='red', linestyle='--', linewidth=0.5, zorder=0, alpha=0.4)
+ax.text(20, 85810 + 100, "Median: 85.810$", color='darkred', fontweight='bold', fontsize=9, ha='center', va='bottom', zorder=2)
 
-# Add text each region
+# Y Axis modify the outlier value
+def format_func(x):
+    return f"{x:,.0f}"
+labels = [item.get_text() for item in ax.get_yticklabels()]
+labels[-1] = format_func(260000)
+ax.set_yticklabels(labels)
+
+# Lines and area to separate outliers
+area100 = 148000
+area99 = 146000
+ax.axhline(y=area100, color='black', linestyle='--', linewidth=0.5, zorder=4)
+ax.axhline(y=area99, color='black', linestyle='--', linewidth=0.5, zorder=4)
+ax.add_patch(patches.Rectangle((0, area99), 1000, area100-area99, linewidth=0, edgecolor='none', facecolor='white', zorder=3))
+
+# Add text each region except Ávila and Segovia
 for i, bar in enumerate(bars):
     region_name = df['region'].iloc[i]
-    x = bar.get_x() + bar.get_width() / 2
-    y = bar.get_height()
     
-    ax.text(
-        x, y + 500,
-        region_name,
-        ha='center', va='bottom', color='#363636', fontsize=8, rotation=90,
-
-    )
+    # Excluir las regiones de Ávila y Segovia
+    if region_name not in ['District of Columbia', 'Montana', 'South Dakota', 'Alaska', 'North Dakota']:
+        x = bar.get_x() + bar.get_width() / 2
+        y = bar.get_height()
+        
+        ax.text(
+            x, y + 1000,
+            region_name,
+            ha='center', va='bottom', color='#363636', fontsize=7, rotation=90,
+        )
 
 # Add Year label 
 ax.text(1, 1.12, f'2024',
@@ -103,7 +125,7 @@ ax.text(1, 1.12, f'2024',
              fontweight='bold', color='#D3D3D3')
     
 # Add Data Source
-ax.text(0, -0.1, 'Data Source: National Bureau of Statistics of China', 
+ax.text(0, -0.1, 'Data Source: Bureau of Economic Analysis (BEA)', 
             transform=plt.gca().transAxes, 
             fontsize=8, 
             color='gray')
@@ -138,7 +160,7 @@ plt.tight_layout()
 
 # Save it...
 download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-filename = os.path.join(download_folder, f"FIG_BUREAU_Region_Distribution_China.png")
+filename = os.path.join(download_folder, f"FIG_BUREAU_Region_Distribution_USA.png")
 plt.savefig(filename, dpi=300, bbox_inches='tight')
 
 # Show :)
