@@ -19,9 +19,9 @@ df = df[['region', 'gdpc', 'population']]
 df['region'] = df['region'].str.replace('*', '', regex=False)
 
 data = pd.DataFrame({
-    'region': ['Hong Kong', 'Macao'],
-    'gdpc': [48800, 36909],
-    'population': [7.5, 0.68],
+    'region': ['Beijing', 'Shangai', 'Chongqing', 'Tianjin', 'Hong Kong', 'Macao'],
+    'gdpc': [28294, 26747, 12350, 17727, 48800, 36909],
+    'population': [21.8, 24.7, 32.0, 13.9, 7.5, 0.68],
 })
 
 df = pd.concat([df, data], ignore_index=True)
@@ -46,9 +46,14 @@ def gini(x, weights=None):
 
 # Calculate gini and median
 gini_index = gini(df['gdpc'].values, df['population'].values)
-median = df['gdpc'].mean()
 
-# Mostrar las primeras filas
+# Calculate weighted median
+df.sort_values('gdpc', inplace=True)
+cumsum = df['population'].cumsum()
+cutoff = df['population'].sum() / 2.0
+median = df.loc[cumsum >= cutoff, 'gdpc'].iloc[0]
+
+# Show dataframe, gini and median
 print(df)
 print(gini_index)
 print(median)
@@ -94,25 +99,32 @@ for i, bar in enumerate(bars):
     region_name = df['region'].iloc[i]
     
     top_cities = [
-    'Ordos', 'Suzhou, Jiangsu', 'Zhuhai', 'Zhenjiang', 'Ili', 'Hong Kong',
-    'Shenzhen', 'Guangzhou', 'Suzhou', 'Chengdu', 'Wuhan', 'Hangzhou', 'Nanjing',
-    'Ningbo', 'Qingdao', 'Wuxi', 'Changsha', 'Zhengzhou', 'Fuzhou', 'Quanzhou',
-    'Jinan', 'Dongguan', 'Foshan', 'Xian', 'Dalian', 'Wenzhou', 'Shenyang',
-    'Xiamen', 'Kunming', 'Baoding', 'Shijiazhuang', 'Linyi', 'Harbin', 'Nanyang',
-    'Weifang', 'Handan', 'Changchun', 'Xuzhou', 'Ganzhou', 'Zhoukou', 'Nanning',
-    'Heze', 'Fujian', 'Jining', 'Shaoyang', 'Hefei', 'Nantong', 'Shangqiu',
-    'Tangshan', 'Hengyang', 'Cangzhou', 'Jinhua', 'Luoyang', 'Yantai', 'Xingtai',
-    'Zhanjiang', 'Zhumadian', 'Bijie'
-]
+        'Beijing', 'Shangai', 'Chongqing', 'Tianjin', 'Hong Kong',
+        'Ordos', 'Suzhou, Jiangsu', 'Zhenjiang', 'Jieyang', 'Kashgar', 'Shangrao', 'Qujing',
+        'Shenzhen', 'Guangzhou', 'Suzhou', 'Chengdu', 'Wuhan', 'Hangzhou', 'Nanjing',
+        'Ningbo', 'Qingdao', 'Wuxi', 'Changsha', 'Zhengzhou', 'Fuzhou', 'Quanzhou',
+        'Jinan', 'Dongguan', 'Foshan', "Xi'an", 'Dalian', 'Wenzhou', 'Shenyang',
+        'Kunming', 'Baoding', 'Shijiazhuang', 'Linyi', 'Harbin', 'Nanyang',
+        'Weifang', 'Handan', 'Changchun', 'Xuzhou', 'Ganzhou', 'Zhoukou', 'Nanning',
+        'Heze', 'Fujian', 'Jining', 'Shaoyang', 'Hefei', 'Nantong', 'Shangqiu',
+        'Tangshan', 'Hengyang', 'Cangzhou', 'Jinhua', 'Luoyang', 'Xingtai',
+        'Zhanjiang', 'Zhumadian', 'Bijie'
+    ]
     
-    # Excluir las regiones de Ávila y Segovia
+    # Add labels
     if region_name in top_cities:
-            
         x = bar.get_x() + bar.get_width() / 2
         y = bar.get_height()
         
+        # Special position
+        if region_name in ["Ordos", "Jinan", "Foshan", "Qingdao"]:
+            x -= 5
+            y += 1000
+        else:
+            y += 1000
+
         ax.text(
-            x, y + 1000,
+            x, y,
             region_name,
             ha='center', va='bottom', color='#363636', fontsize=7, rotation=90,
         )
@@ -149,10 +161,10 @@ ax.text(0, -0.12, 'Notes: The Gini coefficient has been calculated using populat
 # Add label "poorest" and "richest"
 ax.text(0, -0.065, 'Low Income',
              transform=ax.transAxes,
-             fontsize=12, fontweight='bold', color='darkred', ha='left', va='center')
-ax.text(0.905, -0.065, 'High Income',
+             fontsize=11, fontweight='bold', color='darkred', ha='left', va='center')
+ax.text(0.915, -0.065, 'High Income',
              transform=ax.transAxes,
-             fontsize=12, fontweight='bold', color='darkblue', va='center')
+             fontsize=11, fontweight='bold', color='darkblue', va='center')
 
 # Adjust layout
 plt.tight_layout()
