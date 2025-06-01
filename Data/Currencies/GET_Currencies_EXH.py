@@ -40,7 +40,7 @@ for year in range(start_year, end_year +1):
     params = {
             'start_date': f"{year}-01-01",
             'end_date': f"{year}-12-31",
-            'source': 'EUR',
+            'source': 'USD',
             'currencies': currency_string
         }
 
@@ -116,8 +116,8 @@ df.columns = ['Symbol', 'Date', 'Rate', 'Change', 'Changepercent', 'Changesign',
 # SQL Server connection
 # ==============================================================================
 # SQL Server connection details
-server = '10.0.0.1'
-database = 'informes'
+server = 'DESKTOP-FUOV4IE\\MSSQLSERVER_TAB2'
+database = 'master'
 table_name = 'H_Currencies_EXH'
     
 # Create a connection string using username and password
