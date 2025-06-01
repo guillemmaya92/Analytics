@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
+import os
 
 # Data Extraction (temperature)
 # =========================================
@@ -41,6 +42,8 @@ dfc = dfc[['year', 'iso', 'co2']]
 # Merge dataframes
 # =========================================
 df = dft.merge(dfc, on='year', how='left')
+df['value'] = pd.to_numeric(df['value'], errors='coerce')
+df = df[df['value'].notna()]
 
 print(df)
 
@@ -108,7 +111,7 @@ for ax in [ax1, ax2]:
 
 # Add Data Source
 spaces = ' ' * 23
-ax1.text(0, -0.16, f'{spaces}NASA Goddard Institute for Space Studies\nThe Global Carbon Project\'s fossil CO₂ emissions dataset', 
+ax1.text(0, -0.16, f'{spaces}NASA Goddard Institute for Space Studies\nThe Global Carbon Project\'s fossil CO2 emissions dataset', 
          transform=ax1.transAxes, 
          fontsize=8, 
          color='gray', 
@@ -148,8 +151,10 @@ ax1.text(1.01, -0.08, r'CO$_2$',
 # Adjust layout
 plt.tight_layout()
 
-# Save it..
-plt.savefig('C:/Users/guill/Downloads/FIG_NASA_Temperature_Anomalies.png', format='png', bbox_inches='tight')
+# Save it...
+download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+filename = os.path.join(download_folder, f"FIG_NASA_Temperature_Anomalies")
+plt.savefig(filename + ".png", format='png', bbox_inches='tight')
 
 # Show the plot!
 plt.show()
