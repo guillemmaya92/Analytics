@@ -145,6 +145,18 @@ for partner_iso, bar in zip(df['partner_iso'], bars.patches):
         y = bar.get_y() + bar.get_height()/2
         ab = AnnotationBbox(imagebox, (x, y), frameon=False, box_alignment=(0,0.5), pad=0)
         ax.add_artist(ab)
+
+# Add Data Source
+plt.text(0, -0.15, 'Data Source:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 23
+plt.text(0, -0.15, space + 'UN Comtrade', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    color='gray')
       
 # Adjust layout
 plt.tight_layout()
