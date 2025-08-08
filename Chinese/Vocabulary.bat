@@ -1,0 +1,1 @@
+"C:\Users\guillem.maya\AppData\Local\Programs\Python\Python312\python.exe" "\\messi\SOURCE_PBI\SEU\Roles\RLS_Roles.py"
