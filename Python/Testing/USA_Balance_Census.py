@@ -69,17 +69,12 @@ df = pd.concat(dfs, ignore_index=True)
 # ============================================
 # Merge with country data
 df = df.merge(dfc, on='code', how='left')
-df = df.merge(dfgh, left_on='code', right_on='ISO2', how='left')
-df = df[['code', 'iso', 'Country_Abr', 'Cod_Currency', 'flow', 'time', 'value']]
-df = df.rename(columns={
-    'Country_Abr': 'name',
-    'Cod_Currency': 'currency'
-})
+df = df[['code', 'iso', 'flow', 'time', 'value']]
 
 # Filters countries and pivot table
 df = df[df['iso'].notna()]
 df['value'] = pd.to_numeric(df['value'], errors='coerce')
-df = df.pivot_table(index=['code', 'iso', 'name', 'currency', 'time'], columns='flow', values='value').reset_index()
+df = df.pivot_table(index=['code', 'iso', 'time'], columns='flow', values='value').reset_index()
 df['balance'] = df['exports'].fillna(0) - df['imports'].fillna(0)
 
 # Path to save the CSV file
