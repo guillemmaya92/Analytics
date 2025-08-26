@@ -45,13 +45,20 @@ pos_dict = {
 }
 
 # Function to convert text to pinyin
-def text_to_pinyin(text: str) -> str:
+def text_to_pinyin(text: str):
     words = tokenizer(text)
-    result = []
+    chars_result = []
+    pinyin_result = []
+    
     for word in words:
+        chars_result.append(word)  # caracteres originales
         py = pinyin(word, style=Style.TONE, heteronym=False)
-        result.append(''.join([s[0] for s in py]))
-    return ' | '.join(result)
+        pinyin_result.append(' '.join([s[0] for s in py]))  # pinyin del token
+    
+    chars = ' | '.join(chars_result)
+    pinyins = ' | '.join(pinyin_result)
+    
+    return chars, pinyins
 
 # Function to get POS tags using HanLP
 def hanlp_pos_tags(text: str):
@@ -93,7 +100,9 @@ texto = sys.argv[1]
 # Print result
 print(f"{BOLD}Library{RESET}: hanlp")
 print(f"{BOLD}Original{RESET}: {RED}{texto}{RESET}")
-print(f"{BOLD}Pinyin{RESET}: {YELLOW}{text_to_pinyin(texto)}{RESET}")
+chars, pinyins = text_to_pinyin(texto)
+print(f"{BOLD}Chars{RESET}: {RED}{chars}{RESET}")
+print(f"{BOLD}Pinyin{RESET}: {YELLOW}{pinyins}{RESET}")
 print(f"{BOLD}Tags{RESET}: {YELLOW}{hanlp_pos_tags(texto)}{RESET}")
 print(f"{BOLD}Translate{RESET}: {GREEN}{translate_text(texto)}{RESET}")
 print(f"{BOLD}Literal{RESET}: {GREEN}{translate_tokens(texto)}{RESET}")
