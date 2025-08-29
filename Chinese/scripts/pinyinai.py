@@ -1,13 +1,35 @@
-# Libraries
+# ------------------ Libraries------------------------------
+from openai import OpenAI
+import sys
 import hanlp
 from pypinyin import pinyin, Style
-import sys
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
+# ------------------ DeepSeek Translation ------------------
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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",
+)
+
+# Texto original que quieres traducir
+user_prompt = sys.argv[1]
+
+completion = client.chat.completions.create(
+    model="deepseek/deepseek-chat-v3-0324",
+    messages=[
+        {"role": "system", "content": "You are a professional translation assistant. Always translate any input strictly into Chinese and output nothing else."},
+        {"role": "user", "content": user_prompt}
+    ]
+)
+
+# Guardamos la traducción en 'texto'
+texto = completion.choices[0].message.content
+
+# ------------------ HanLP + Pinyin + GoogleTranslator ------------------
 # Models
 tokenizer = hanlp.load('CTB9_TOK_ELECTRA_BASE')
 pos_tagger = hanlp.load(hanlp.pretrained.pos.CTB9_POS_ELECTRA_SMALL)
-translator = Translator()
+translator = GoogleTranslator(source='auto', target='en')
 
 # Dictionary for POS tags
 pos_dict = {
@@ -68,17 +90,20 @@ def hanlp_pos_tags(text: str):
     return ' | '.join(tagged_desc)
 
 # Function to translate text
-def translate_text(text: str, src: str = "zh-cn", dest: str = "en") -> str:
-    translation = translator.translate(text, src=src, dest=dest)
-    return translation.text
+def translate_text(text: str, src: str = "zh-CN", dest: str = "en") -> str:
+    translation = GoogleTranslator(source=src, target=dest).translate(text)
+    return translation
 
 # Function to translate word by word
-def translate_tokens(text: str, src: str = "zh-cn", dest: str = "en") -> str:
+def translate_tokens(text: str, src: str = "zh-CN", dest: str = "en") -> str:
     words = tokenizer(text)
     translations = []
     for word in words:
-        translated = translator.translate(word, src=src, dest=dest)
-        translations.append(translated.text.lower())
+        translated = GoogleTranslator(source=src, target=dest).translate(word)
+        if translated:
+            translations.append(translated.lower())
+        else:
+            translations.append(word)
     return ' | '.join(translations)
 
 # Colors
@@ -88,14 +113,6 @@ YELLOW = "\033[93m"
 BLUE   = "\033[38;5;81m"
 GREEN = "\x1b[38;5;49m"
 RESET = "\033[0m"
-
-# Get text from command line argument
-if len(sys.argv) < 2:
-    print("Usage: python script.py <text>")
-    sys.exit(1)
-
-# Text parameter
-texto = sys.argv[1]
 
 # Print result
 print(f"{BOLD}Library{RESET}: hanlp")
