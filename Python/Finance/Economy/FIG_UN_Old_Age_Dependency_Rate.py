@@ -138,7 +138,7 @@ for iso3 in df_prediction['iso3'].unique():
             
         # Add flag image
         img = flags[iso3]
-        imagebox = OffsetImage(img, zoom=0.025)
+        imagebox = OffsetImage(img, zoom=0.0225)
         ab = AnnotationBbox(imagebox, (x, y), frameon=False, box_alignment=(0,0.5), pad=0)
         ax.add_artist(ab)
         

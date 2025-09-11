@@ -59,7 +59,7 @@ urss = {'iso3': 'SUN', 'year': 1980, 'LP': 264, 'NGDPD': 354}
 df = pd.concat([df, pd.DataFrame([urss])], ignore_index=True)
 
 # Filter after 2024
-df = df[df['year'] == 1992]
+df = df[df['year'] == 2024]
 df = df.dropna(subset=['LP', 'NGDPD'])
 
 # Data Manipulation
@@ -116,7 +116,7 @@ bars = plt.bar(
 
 # Add title and subtitle
 fig.add_artist(plt.Line2D([0.085, 0.085], [0.87, 0.97], linewidth=6, color='#203764', solid_capstyle='butt'))
-plt.text(0.02, 1.13, f'A Great Democratic Divergence', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.13, f'A Huge Democratic Divergence', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 plt.text(0.02, 1.09, f'Where demographic weight does not match economic influence', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
 plt.text(0.02, 1.05, f'(difference between economic share and population share)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
 

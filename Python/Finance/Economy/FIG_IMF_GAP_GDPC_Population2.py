@@ -73,13 +73,13 @@ df.columns = df.columns.str.lower()
 # Add calculated fields
 df['lp_percent'] = df['lp'] / df['lp'].sum()
 df['ngdpdpcm'] = df['ngdpd'].sum() / df['lp'].sum() * 1000
-df['ngdpd_percent'] = np.where(
+df['ngdpd_percent'] = (df['ngdpdpc'] - df['ngdpdpcm']) / df['ngdpdpcm']
+df['gap'] = df['ngdpd_percent']
+df['gap2'] = np.where(
     df['ngdpdpc'] > df['ngdpdpcm'],
     1 - (df['ngdpdpcm'] / df['ngdpdpc']),
     (df['ngdpdpc'] / df['ngdpdpcm']) -1
 )
-df['gap'] = df['ngdpd_percent']
-df['gap2'] = (df['ngdpd'] / df['ngdpd'].sum()) - df['lp_percent']
 
 # Ordenar por gap
 df = df.sort_values(by='gap', ascending=True)
@@ -103,10 +103,10 @@ fig, ax = plt.subplots(figsize=(10, 6))
 
 # Create a palette
 palette = sns.color_palette("coolwarm", as_cmap=True).reversed()
-gdp_min = df['gap'].min()
-gdp_max = df['gap'].max()
+gdp_min = df['gap2'].min()
+gdp_max = df['gap2'].max()
 norm = plt.Normalize(gdp_min, gdp_max)
-colors = palette(norm(df['gap']))
+colors = palette(norm(df['gap2']))
 
 # Barplot
 bars = plt.bar(
@@ -124,7 +124,7 @@ bars = plt.bar(
 fig.add_artist(plt.Line2D([0.085, 0.085], [0.87, 0.97], linewidth=6, color='#203764', solid_capstyle='butt'))
 plt.text(0.02, 1.13, f'A Great Democratic Divergence', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 plt.text(0.02, 1.09, f'Where demographic weight does not match economic influence', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
-plt.text(0.02, 1.05, f'(normalized relative gap between GDP per capita and the global median)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.05, f'(relative gap between GDP per capita and the global median)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
 
 # Remove spines
 ax = plt.gca()
@@ -134,13 +134,13 @@ ax.spines['bottom'].set(color='gray', linewidth=1)
 ax.spines['left'].set_linewidth(False)
 
 # Configuration
-plt.ylim(-1.1, 1.1)
+plt.ylim(-2, 6)
 plt.xlim(0, df['lp_cum_per'].max())
-ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
 ax.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
 plt.grid(axis='y', linestyle='--', linewidth=0.5, color='lightgray')
 plt.xlabel('Cumulative Global Population (%)', fontsize=10, fontweight='bold')
-plt.ylabel('GAP GDPC-Population Share', fontsize=10, fontweight='bold')
+plt.ylabel('Relative gap of GDP per capita to the global median', fontsize=10, fontweight='bold')
 plt.tick_params(axis='x', labelsize=9)
 plt.tick_params(axis='y', labelsize=9)
 plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x*100):,}%'))
@@ -172,8 +172,8 @@ for bar, iso3 in zip(bars, df['iso3']):
         imagebox = OffsetImage(img, zoom=0.021)
         x = bar.get_x() + bar.get_width() / 2
 
-        offset = 0.02 
-        text_offset = 0.1
+        offset = 0.2 
+        text_offset = 0.35
 
         # Positioning logic
         if bar.get_height() >= 0:
