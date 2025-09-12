@@ -1,291 +1,189 @@
 # Libraries
 # ===================================================
 import os
-import pandas as pd
-import numpy as np
 import requests
-import plotly.graph_objects as go
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.ticker import FuncFormatter
+from io import BytesIO
 
-# Data Extraction (Countries)
-# =====================================================================
-# Extract JSON and bring data to a dataframe
+# Extract Data (Countries)
+# ===================================================
+# Extract JSON to dataframe
 url = 'https://raw.githubusercontent.com/guillemmaya92/world_map/main/Dim_Country.json'
 response = requests.get(url)
 data = response.json()
 df = pd.DataFrame(data)
 df = pd.DataFrame.from_dict(data, orient='index').reset_index()
-df = df.rename(columns={'index': 'ISO3'})
-df = df[['ISO2', 'Country']]
-df_countries = df.rename(columns={'ISO2': 'country', 'Country': 'country_name'})
+df_countries = df.rename(columns={'index': 'ISO3'})
 
-# Data Extraction
+# Extract Data (WID)
 # ===================================================
-# Define CSV path
-path = r'C:\Users\guillem.maya\Downloads\data\X'
+# Extract PARQUET to dataframe
+url = "https://raw.githubusercontent.com/guillemmaya92/Analytics/master/Data/WID_Values.parquet"
+df = pd.read_parquet(url, engine="pyarrow")
 
-# List to save dataframe
-list = []
-
-# Iterate over each file
-for archivo in os.listdir(path):
-    if archivo.startswith("WID_data_") and archivo.endswith(".csv"):
-        df = pd.read_csv(os.path.join(path, archivo), delimiter=';')
-        list.append(df)
-
-# Combine all dataframes and create a copy
-df = pd.concat(list, ignore_index=True)
-dfr = df.copy()
-dfp = df.copy()
-
-# Filter dataframes
-variable = ['anninci992', 'anweali992']
-variabler = ['xlceuxi999']
-variablep = ['npopuli999']
-percentile = ['p0p100']
-year = [1995, 2022]
-df = df[df['variable'].isin(variable) & df['percentile'].isin(percentile) & df['year'].isin(year)]
-dfr = dfr[dfr['variable'].isin(variabler) & dfr['percentile'].isin(percentile) & dfr['year'].isin([max(year)+1])]
-dfp = dfp[dfp['variable'].isin(variablep) & dfp['percentile'].isin(percentile) & dfp['year'].isin([max(year)])]
-
-# Data Manipulation
+# Transform Data
 # ===================================================
-# Selection Columns DF
-df = df[['country', 'variable', 'year', 'value']]
-df['variable'] = df['variable'].replace({'anninci992': 'income', 'anweali992': 'wealth'})
+# Filter nulls and countries
+df = df[df['wiratio'].notna()]
+df = pd.merge(df, df_countries, left_on='country', right_on='ISO2', how='inner')
 
-# Selection Columns DFR
-dfr = dfr[['country', 'value']]
-dfr = dfr.rename(columns={'value': 'exchange'})
+# Rename columns
+df = df.rename(
+        columns={
+            'Country_Abr': 'country_name',
+            'wiratio': 'beta'
+        }
+    )
 
-# Selection Columns DFP
-dfp = dfp[['country', 'value']]
-dfp = dfp.rename(columns={'value': 'population'})
+# Filter countries have data post 1980
+dfx = df.loc[df['year'] == 1980, 'country']
+df = df[df['country'].isin(dfx)]
+df = df[df['year'] >= 1980]
+df = df[df['Analytical'] == 'Advanced Economies']
 
-# Join Currencies DFR
-df = pd.merge(df, dfr, on=['country'], how='left')
-df['value_eur'] = df['value'] / df['exchange']
+# Dataframe countries
+dfc = df[df['country'].isin(['CN', 'US', 'DE', 'ES', 'JP', 'IN'])]
 
-# Join Countries
-df = pd.merge(df, df_countries, on=['country'], how='left')
-df = df[df['country_name'].notna()]
+# Select columns and order
+df = df[['year', 'country', 'country_name', 'beta']]
 
-# Replace year values
-max_value = df['year'].max()
-df['year'] = df['year'].apply(lambda x: 'CY' if x == max_value else 'PY')
-df['variable_year'] = df['variable'].astype(str) + df['year'].astype(str)
+print(df)
 
-# Pivot variable
-df = df.pivot_table(index=['country', 'country_name'], columns='variable_year', values='value_eur')
-df = df.reset_index()
-df = df[df['incomeCY'].notna() & df['wealthCY'].notna()]
-df = df[~df['country'].isin(['SL', 'CU', 'LU'])]
-df = df[~df['country'].isin(['SZ', 'VA', 'NC', 'CI', 'MW', 'SS', 'MY'])]
-
-# Join Population
-df = pd.merge(df, dfp, on=['country'], how='left')
-
-# Ordering
-df['incomeCY'] = df['incomeCY'] / 1000
-df['incomePY'] = df['incomePY'] / 1000
-df['wealthCY'] = df['wealthCY'] / 1000
-df['wealthPY'] = df['wealthPY'] / 1000
-df['population'] = df['population'] / 1000000
-df['total_income'] = df['incomeCY'] * df['population'] / 1000
-
-# Variations
-df['betaCY'] = df['wealthCY'] / df['incomeCY']
-df['betaPY'] = df['wealthPY'] / df['incomePY']
-df['incomeVAR'] = (df['incomeCY'] - df['incomePY']) / df['incomePY'] * 100
-df['wealthVAR'] = (df['wealthCY'] - df['wealthPY']) / df['wealthPY'] * 100
-df['betaVAR'] = (df['betaCY'] - df['betaPY'])
-
-# Data Visualization
+# Visualization Data
 # ===================================================
-fig = go.Figure()
+# Font Style
+plt.rcParams.update({'font.family': 'sans-serif', 'font.sans-serif': ['Franklin Gothic'], 'font.size': 9})
+sns.set(style="white", palette="muted")
 
-# Marker size
-marker_size = np.sqrt(df["total_income"] / df["total_income"].max()) * 100 + 3
-line_width  = np.sqrt(df["total_income"] / df["total_income"].max()) * 4 + 0.5
+# Create color dictionaire 
+palette = {'CN': '#C00000', 'US': '#153D64', 'IN': '#E97132', 'DE': '#3C7D22', 'ES': '#ECB100', 'JP': "#782170"}
 
-# Add scatter plot
-fig.add_trace(go.Scatter(
-    x=df["betaCY"],
-    y=df["incomeCY"],
-    mode='markers',
-    text=df["country_name"],
-    customdata=np.vstack((df["incomeCY"], df["wealthCY"], df["incomeVAR"], df["wealthVAR"], df["betaCY"], df["betaVAR"])).T,
-    marker=dict(
-        size=marker_size,
-        color="rgba(0,0,0,0)",
-        line=dict(
-            width=line_width,
-            color='black'
-        )
-    ),
-    hovertemplate="<b>Country:</b> %{text}<br>" +
-                  "<b>Income Avg (€):</b> %{y:.0f}k | <b>Var. 1995:</b> %{customdata[2]:.2f}%<br>" + 
-                  "<b>Wealth Avg (€):</b> %{customdata[1]:.0f}k | <b>Var. 1995:</b> %{customdata[3]:.2f}%<br>" +
-                  "<b>Ratio:</b> %{customdata[4]:.2f} | <b>Var. 1995:</b> %{customdata[5]:.2f}pp<extra></extra>",
-    showlegend=False
-))
+# Create line plots
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.lineplot(data=df, x='year', y='beta', hue='country', linewidth=0.3, alpha=0.5, palette=["#A4A4A4"], legend=False, ax=ax)
+sns.lineplot(data=dfc, x='year', y='beta', hue='country', linewidth=1.5, palette=palette, legend=False, ax=ax)
 
-# Add flag images to scatterplot
-for i, row in df.iterrows():
-    country_iso = row["country"]
+# Add title and subtitle
+fig.add_artist(plt.Line2D([0.12, 0.12], [0.86, 0.97], linewidth=6, color='#203764', solid_capstyle='butt'))
+plt.text(0.02, 1.14, f'Capital is back', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.09, f'Wealth-Income Ratios in Advanced Economies 1980-2023', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.05, f'(total wealth divided by annual income)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
+
+# Custom plot
+plt.xlabel('')
+plt.ylabel('Wealth-Income Ratio (%)', fontsize=10, fontweight='bold')
+formatter = FuncFormatter(lambda y, _: '{:,.0f}%'.format(y * 100))
+plt.gca().yaxis.set_major_formatter(formatter)
+plt.grid(axis='x', alpha=0.7, linestyle=':')
+plt.ylim(0, 12)
+plt.xlim(1980, 2026)
+plt.xticks(range(1980, 2026, 10))
+plt.tick_params(axis='both', labelsize=9)
+plt.tight_layout()
+
+# Delete spines
+ax = plt.gca()
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set(color='gray', linewidth=1)
+ax.spines['left'].set_linewidth(False)
+
+# Add Data Source
+plt.text(0, -0.12, 'Data Source:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 23
+plt.text(0, -0.12, space + 'World Inequality Database', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    color='gray')
+
+# Add Data Source
+plt.text(0, -0.15, 'Notes:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 12
+plt.text(0, -0.15, space + 'Wealth-Income Ratio is the division of national wealth by national income.', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    color='gray')
+
+ # Add Year label
+formatted_date = 2023
+plt.text(1.07, 1.15, f'{formatted_date}',
+    transform=plt.gca().transAxes,
+    fontsize=20, ha='right', va='top',
+    fontweight='bold', color='#D3D3D3')
+
+# Define flags
+flag_urls = {
+    'CN': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/CN.png',
+    'US': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/US.png',
+    'ES': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/ES.png',
+    'DE': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/DE.png',
+    'JP': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/JP.png'
+}
+flags = {country: mpimg.imread(BytesIO(requests.get(url).content)) for country, url in flag_urls.items()}
+
+# Custom offsets to move flags
+y_offsets = {
+    'ES': 0.1,
+    'FR': -0.1,
+    'US': -0.15,
+    'CN': 0.0,
+    'JP': 0.1
+}
+
+# Iterate over each country
+for country in dfc['country'].unique():
+    # Get country data
+    country_data = dfc[dfc['country'] == country]
+    last_point = country_data[country_data['year'] == country_data['year'].max()].iloc[0]
+    x = last_point['year']
+    y = last_point['beta'] + y_offsets.get(country, 0.0)
+    country_name = last_point['country_name']
+    value = last_point['beta'] * 100
+
+    # Add flag
+    flag_img = flags[country]
+    imagebox = OffsetImage(flag_img, zoom=0.021, resample=True, alpha=0.8)
+    ab = AnnotationBbox(imagebox, (x + 0.5, y), frameon=False, box_alignment=(0, 0.5))
+    ax.add_artist(ab)
+
+    # Add country name
+    name_x = x + 2
+    text_name = ax.text(name_x, y, country_name,
+                        fontsize=8, va='center', ha='left', color=palette[country])
+
+    # Canvas to measure large text, Get bbox name texto (px), Convert bbox to coordenates
+    fig.canvas.draw()
+    bbox_name = text_name.get_window_extent()
+    inv = ax.transData.inverted()
+    bbox_data = inv.transform([(bbox_name.x0, bbox_name.y0), (bbox_name.x1, bbox_name.y1)])
+    width_data = bbox_data[1][0] - bbox_data[0][0]
+
+    # Position beta after name
+    label_x = name_x + width_data + 0.5
+    label = f"({value:,.0f}%)"
+    ax.text(label_x, y, label,
+            fontsize=8, va='center', ha='left', fontweight='bold', color=palette[country])
     
-    # Calculate image size
-    image_size = marker_size[i] * 0.21
+# Adjust layout
+plt.tight_layout()
 
-    # Add the flag image
-    fig.add_layout_image(
-        dict(
-            source=f"https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/{country_iso}.png",
-            xref="x",
-            yref="y",
-            xanchor="center",
-            yanchor="middle",
-            x=row["betaCY"],
-            y=row["incomeCY"],
-            sizex=image_size,
-            sizey=image_size,
-            sizing="contain",
-            opacity=0.8,
-            layer="above"
-        )
-    )
+# Save it...
+download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+filename = os.path.join(download_folder, f"FIG_WID_Beta_Evolution")
+plt.savefig(filename, dpi=300, bbox_inches='tight')
 
-# Add red and green shapes
-fig.add_shape(
-    type="rect",
-    xref="x", yref="paper",
-    x0=0, x1=6,
-    y0=0, y1=1,
-    fillcolor="green",
-    opacity=0.04,
-    layer="below",
-    line_width=0
-)
-fig.add_shape(
-    type="rect",
-    xref="x", yref="paper",
-    x0=6, x1=12,
-    y0=0, y1=1,
-    fillcolor="red",
-    opacity=0.04,
-    layer="below",
-    line_width=0
-)
-
-# Configuration plot
-fig.update_layout(
-    title="<b>Capital is Back</b>",
-    title_x=0.11,
-    title_font=dict(size=16),
-    annotations=[
-        dict(
-            text="Income and Wealth Ratio by Country",
-            xref="paper",
-            yref="paper",
-            x=0,
-            y=1.07,
-            showarrow=False,
-            font=dict(size=11)
-        ),
-        dict(
-            text="<b>Data Source:</b> World Inequality Database (WID)",
-            xref="paper",
-            yref="paper",
-            x=0,
-            y=-0.12,
-            showarrow=False,
-            font=dict(size=10),
-            align="left"
-        ),
-        dict(
-            text="<b>Currency:</b> Official exchange rate 2023 of the local currency to EUR.",
-            xref="paper",
-            yref="paper",
-            x=0,
-            y=-0.14,
-            showarrow=False,
-            font=dict(size=10),
-            align="left"
-        ),
-        dict(
-            text=f"2022",
-            xref="paper", 
-            yref="paper",
-            x=1, 
-            y=1.1,
-            showarrow=False,
-            font=dict(size=22, color='lightgray', weight='bold'),
-            align="right"
-        )
-    ],
-    xaxis=dict(
-        title="<b>Income-Wealth Ratio</b>",
-        range=[0, 12],
-        tickvals=[i *  4 / 2 for i in range(7)],
-        ticktext=[f"{int(i * 4 / 2)}" for i in range(7)],
-        showline=True,
-        linewidth=1,
-        linecolor="black",
-        gridcolor="#ebebeb"
-    ),
-    yaxis=dict(
-        title="<b>Income Average (€)</b>",
-        range=[0, 120],
-        tickvals=[i * 120 / 6 for i in range(7)],
-        ticktext=[f"{int(i * 120 / 6)}k" for i in range(7)],
-        showline=True,
-        linewidth=1,
-        linecolor="black",
-        gridcolor="#ebebeb"
-    ),
-    height=750,
-    width=750,
-    plot_bgcolor="white",   
-    paper_bgcolor="white"
-)
-
-# Add a custom legend
-size_legend = ['Smaller', 'Middle', 'Bigger']
-size_values = [5, 10, 20]
-
-for label, size in zip(size_legend, size_values):
-    fig.add_trace(go.Scatter(
-        x=[None],
-        y=[None],
-        mode='markers',
-        marker=dict(
-            size=size,
-            color="rgba(0,0,0,0)",
-            line=dict(
-                width=1,
-                color='black'
-            )
-        ),
-        legendgroup='size',
-        showlegend=True,
-        name=f'{label}'
-    ))
-
-fig.update_layout(
-    legend=dict(
-        title=dict(text='<b>  Total Income</b>'), 
-        font=dict(size=11),
-        x=0.025,
-        y=0.95,
-        xanchor='left',
-        bgcolor='white',
-        bordercolor='black',
-        borderwidth=1
-    )
-)
-
-# Save as HTML file!
-fig.write_html("C:/Users/guillem.maya/Desktop/FIG_WID_CapitalisBack_Flag.html")
-fig.write_image("C:/Users/guillem.maya/Desktop/FIG_WID_CapitalisBack_Flag.png")
-
-# Show the plot!
-fig.show()
+# Show plot
+plt.show()

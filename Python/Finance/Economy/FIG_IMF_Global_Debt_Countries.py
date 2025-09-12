@@ -219,6 +219,6 @@ for spine in plt.gca().spines.values():
 plt.tight_layout()
 
 # Save figure...
-plt.savefig(r'C:\Users\guillem.maya\Downloads\FIG_IMF_Global_Debt_Countries.png', format='png', dpi=300)
+plt.savefig(r'C:\Users\guill\Downloads\FIG_IMF_Global_Debt_Countries.png', format='png', dpi=300)
 
 plt.show()
