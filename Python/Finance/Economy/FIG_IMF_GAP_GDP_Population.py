@@ -1,0 +1,245 @@
+# Libraries
+# =====================================================================
+import os
+from io import BytesIO
+import requests
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.ticker as mtick
+import matplotlib.patches as mpatches
+from matplotlib.legend_handler import HandlerPatch
+
+# Data Extraction (Countries)
+# =====================================================================
+# Extract JSON and bring data to a dataframe
+url = 'https://raw.githubusercontent.com/guillemmaya92/world_map/main/Dim_Country.json'
+response = requests.get(url)
+data = response.json()
+df = pd.DataFrame(data)
+df = pd.DataFrame.from_dict(data, orient='index').reset_index()
+df_countries = df.rename(columns={'index': 'ISO3'})
+
+# Data Extraction - WBD (2024)
+# ========================================================
+#Parametro
+parameters = ['LP', 'NGDPD']
+
+# Create an empty list
+records = []
+
+# Iterar sobre cada parámetro
+for parameter in parameters:
+    # Request URL
+    url = f"https://www.imf.org/external/datamapper/api/v1/{parameter}"
+    response = requests.get(url)
+    data = response.json()
+    values = data.get('values', {})
+
+    # Iterate over each country and year
+    for country, years in values.get(parameter, {}).items():
+        for year, value in years.items():
+            records.append({
+                'parameter': parameter,
+                'iso3': country,
+                'year': int(year),
+                'value': float(value)
+            })
+    
+# Create dataframe
+df = pd.DataFrame(records)
+
+# Pivot Parameter to columns and filter nulls
+df = df.pivot(index=['iso3', 'year'], columns='parameter', values='value').reset_index()
+
+# Add URSS 1980
+urss = {'iso3': 'SUN', 'year': 1980, 'LP': 264, 'NGDPD': 354}
+df = pd.concat([df, pd.DataFrame([urss])], ignore_index=True)
+
+# Filter after 2024
+df = df[df['year'].isin([1992, 2024])]
+df = df.dropna(subset=['LP', 'NGDPD'])
+
+# Data Manipulation
+# =====================================================================
+# Merge queries
+df = df.merge(df_countries, how='left', left_on='iso3', right_on='ISO3')
+df = df[(df['Country_Abr'].notna()) | (df['iso3'] == 'SUN')]
+df = df[['iso3', 'Country_Abr', 'year', 'LP', 'NGDPD']]
+df.columns = df.columns.str.lower()
+
+# Add calculated fields
+df['lp_percent'] = df['lp'] / df.groupby('year')['lp'].transform('sum')
+df['ngdpd_percent'] = df['ngdpd'] / df.groupby('year')['ngdpd'].transform('sum')
+df['gap'] = df['ngdpd_percent'] - df['lp_percent']
+
+# Ordenar por gap
+df = df.sort_values(by='gap', ascending=True)
+
+# Filter countries
+df = df[(df['iso3'].isin(['IND', 'NGA', 'PAK', 'IDN', 'BGD', 'CHN', 'USA', 'DEU', 'GBR', 'JPN', 'FRA']))]
+
+# Assign colors
+def get_color(row):
+    if row['year'] == 2024:
+        return '#C00000' if row['gap'] < 0 else '#153D64'
+    else:  # 1992
+        return '#FFCCCC' if row['gap'] < 0 else '#C0E6F5'
+
+df['color'] = df.apply(get_color, axis=1)
+
+# Data Visualization
+# ==========================================
+# Font and style
+plt.rcParams.update({'font.family': 'sans-serif', 'font.sans-serif': ['Franklin Gothic'], 'font.size': 9})
+sns.set(style="white", palette="muted")
+
+# Create figure
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# Configuración de posiciones
+countries = df[df['year'] == 1992].sort_values('gap', ascending=True)['country_abr'].tolist()
+y_pos = np.arange(len(countries))
+bar_width = 0.4
+
+# Plot bars for each year
+for i, year in enumerate(sorted(df['year'].unique())):
+    year_data = df[df['year']==year].set_index('country_abr').reindex(countries)
+    offsets = y_pos - bar_width/2 + i*bar_width
+    plt.barh(offsets, year_data['gap'], height=bar_width, color=year_data['color'], label=str(year))
+
+# Labels for each column
+years = sorted(df['year'].unique())
+min_year, max_year = years[0], years[-1]
+
+for year in years:
+    year_data = df[df['year']==year].set_index('country_abr').reindex(countries)
+    offsets = y_pos - bar_width/2 + (0 if year==min_year else bar_width)
+    
+    # Different color for min and max year
+    color = '#595959' if year == min_year else '#0D0D0D'
+    
+    for y, val in zip(offsets, year_data['gap']):
+        plt.text(val + (0.002 if val > 0 else -0.002), y,
+                 f'{val:.1%}',
+                 va='center',
+                 ha='left' if val > 0 else 'right',
+                 fontsize=7,
+                 color=color)
+
+# Define flags
+flag_urls = {
+    'CHN': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/CN.png',
+    'IND': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/IN.png',
+    'IDN': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/ID.png',
+    'NGA': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/NG.png',
+    'PAK': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/PK.png',
+    'BGD': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/BG.png',
+    'USA': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/US.png',
+    'GBR': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/GB.png',
+    'JPN': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/JP.png',
+    'FRA': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/FR.png',
+    'DEU': 'https://raw.githubusercontent.com/matahombres/CSS-Country-Flags-Rounded/master/flags/DE.png',
+}
+
+# Load flags once
+flags = {country: mpimg.imread(BytesIO(requests.get(url).content)) 
+         for country, url in flag_urls.items()}
+
+# Add flags
+ax = plt.gca()
+for y, ctry  in zip(y_pos, countries):
+    iso = df.loc[df['country_abr'] == ctry, 'iso3'].iloc[0]
+    if iso in flags:
+        im = OffsetImage(flags[iso], zoom=0.025)
+        ab = AnnotationBbox(im, (0, y), frameon=False, xycoords=('axes fraction','data'), box_alignment=(0,0.5))
+        ax.add_artist(ab)
+
+# Remove spines
+for position, spine in ax.spines.items():
+    if position != 'bottom':
+        spine.set_visible(False)
+    else:
+        spine.set_color('#808080')
+        spine.set_linewidth(1)
+
+# Add title and subtitle
+fig.add_artist(plt.Line2D([0.135, 0.135], [0.87, 0.97], linewidth=6, color='#203764', solid_capstyle='butt'))
+plt.text(0.02, 1.12, f'A Huge Democratic Divergence', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.08, f'Where demographic weight does not match economic influence', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
+plt.text(0.02, 1.045, f'(difference between economic share and population share)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
+
+# Adjust axis
+plt.xlim(-0.25, 0.25)
+ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+plt.xticks(fontsize=8)
+plt.yticks(y_pos, countries, fontsize=10)
+plt.axvline(0, color='#808080', linewidth=0.5)
+
+# Add label "Underrepresented" and "Overrepresented"
+plt.text(0, -0.12, 'Under-represented',
+    transform=ax.transAxes,
+    fontsize=8, fontweight='bold', color='darkred', ha='left', va='center')
+plt.text(0.85, -0.12, 'Over-represented',
+    transform=ax.transAxes,
+    fontsize=8, fontweight='bold', color='darkblue', va='center')
+
+# Add Data Source
+plt.text(0, -0.17, 'Data Source:', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    fontweight='bold',
+    color='gray')
+space = " " * 23
+plt.text(0, -0.17, space + 'IMF World Economic Outlook Database, 2024', 
+    transform=plt.gca().transAxes, 
+    fontsize=8,
+    color='gray')
+
+# Legend configuration
+# Handler que divide el cuadrado en dos colores
+class HandlerSplitSquare(HandlerPatch):
+    def __init__(self, color_left, color_right, **kwargs):
+        super().__init__(**kwargs)
+        self.color_left = color_left
+        self.color_right = color_right
+
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        p1 = mpatches.Rectangle([xdescent, ydescent], width/2, height,
+                                facecolor=self.color_left, transform=trans)
+        p2 = mpatches.Rectangle([xdescent+width/2, ydescent], width/2, height,
+                                facecolor=self.color_right, transform=trans)
+        return [p1, p2]
+
+# Handles ficticios
+patch_min = mpatches.Rectangle((0,0),1,1, facecolor="none")
+patch_max = mpatches.Rectangle((0,0),1,1, facecolor="none")
+
+plt.legend(
+    handles=[patch_min, patch_max],
+    labels=[f"{min_year}", f"{max_year}"],
+    handler_map={
+        patch_min: HandlerSplitSquare("#C0E6F5", "#FFCCCC"),
+        patch_max: HandlerSplitSquare("#153D64", "#C00000"),
+    },
+    loc='lower center',
+    bbox_to_anchor=(0.5, -0.12),
+    ncol=2,
+    fontsize=8,
+    frameon=False
+)
+
+# Adjust layout
+plt.tight_layout()
+
+# Save it...
+download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+filename = os.path.join(download_folder, f"FIG_IMG_GAP_GDP_Population.png")
+plt.savefig(filename, dpi=300, bbox_inches='tight')
+
+# Show :)
+plt.show()
