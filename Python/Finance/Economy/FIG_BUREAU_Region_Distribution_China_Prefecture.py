@@ -5,13 +5,18 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import requests
 import os
 
 # Data (China) 
 # =====================================================================
 # Read wikipedia data
 url = "https://en.wikipedia.org/wiki/List_of_prefecture-level_divisions_of_China_by_GDP"
-tables = pd.read_html(url)
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+}
+html = requests.get(url, headers=headers).text
+tables = pd.read_html(html)
 df = tables[0]
 df.columns = ['region', '1', '2', '3', 'gdp', '4', 'gdpc', '5']
 df['population'] = df['gdp'] / df['gdpc'] * 1000
@@ -19,9 +24,9 @@ df = df[['region', 'gdpc', 'population']]
 df['region'] = df['region'].str.replace('*', '', regex=False)
 
 data = pd.DataFrame({
-    'region': ['Beijing', 'Shangai', 'Chongqing', 'Tianjin', 'Hong Kong', 'Macao'],
-    'gdpc': [28294, 26747, 12350, 17727, 48800, 36909],
-    'population': [21.8, 24.7, 32.0, 13.9, 7.5, 0.68],
+    'region': ['Beijing', 'Shangai', 'Chongqing', 'Tianjin', 'Hong Kong', 'Macao', 'Taiwan'],
+    'gdpc': [28294, 26747, 12350, 17727, 48800, 36909, 32756],
+    'population': [21.8, 24.7, 32.0, 13.9, 7.5, 0.68, 23.3],
 })
 
 df = pd.concat([df, data], ignore_index=True)
@@ -73,7 +78,7 @@ bars = plt.bar(df['left'], df['gdpc'], width=df['population'],
         color=colors, alpha=1, align='edge', edgecolor='grey', linewidth=0.1)
 
 # Title
-fig.add_artist(plt.Line2D([0.08, 0.08], [0.90, 0.99], linewidth=6, color='#203764', solid_capstyle='butt'))
+fig.add_artist(plt.Line2D([0.085, 0.085], [0.90, 0.985], linewidth=6, color='#203764', solid_capstyle='butt'))
 ax.text(0.02, 1.09, f'Regional GDP Distribution of China', fontsize=16, fontweight='bold', ha='left', transform=plt.gca().transAxes)
 ax.text(0.02, 1.06, f'From rural to urban, the role of location in income inequality', fontsize=11, color='#262626', ha='left', transform=plt.gca().transAxes)
 ax.text(0.02, 1.03, f'(GDP per capita in $US)', fontsize=9, color='#262626', ha='left', transform=plt.gca().transAxes)
@@ -108,7 +113,7 @@ for i, bar in enumerate(bars):
         'Weifang', 'Handan', 'Changchun', 'Xuzhou', 'Ganzhou', 'Zhoukou', 'Nanning',
         'Heze', 'Fujian', 'Jining', 'Shaoyang', 'Hefei', 'Nantong', 'Shangqiu',
         'Tangshan', 'Hengyang', 'Cangzhou', 'Jinhua', 'Luoyang', 'Xingtai',
-        'Zhanjiang', 'Zhumadian', 'Bijie'
+        'Zhanjiang', 'Zhumadian', 'Bijie', 'Taiwan', 'Macao'
     ]
     
     # Add labels
@@ -117,7 +122,13 @@ for i, bar in enumerate(bars):
         y = bar.get_height()
         
         # Special position
-        if region_name in ["Ordos", "Jinan", "Foshan", "Qingdao"]:
+        if region_name == "Macao":
+            x += -8
+            y += 1000
+        elif region_name == "Ordos":
+            x += -2
+            y += 3500
+        elif region_name in ["Jinan", "Foshan", "Qingdao"]:
             x -= 5
             y += 1000
         else:
