@@ -4,15 +4,13 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-from matplotlib.lines import Line2D
 import matplotlib.dates as mdates
 from matplotlib.ticker import PercentFormatter
 
 # Data Extraction
 # ===================================================
 # Define CSV path
-path = r'C:\Users\guillem.maya\Downloads\wid_all_data\analyze'
+path = r'C:\Users\guill\Downloads\wid_all_data\analyze'
 
 # List to save dataframe
 list = []

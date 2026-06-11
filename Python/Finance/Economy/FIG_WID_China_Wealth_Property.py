@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 # Data Extraction
 # ===================================================
 # Define CSV path
-path = r'C:\Users\guillem.maya\Downloads\wid_all_data\analyze'
+path = r'C:\Users\guill\Downloads\wid_all_data\analyze'
 
 # List to save dataframe
 list = []
